@@ -40,6 +40,11 @@ export function FloatingEdge({
   selected,
   data,
 }: EdgeProps) {
+  // -- Hooks ----------------------------------------------------------
+  // All hooks must run on every render in the same order — that's why the
+  // early "return null" sentinel for missing nodes lives below the hook
+  // section, not above it. When the nodes are still loading, midX/midY
+  // default to 0 and the drag effect is a no-op (gated by `dragging`).
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
   const { screenToFlowPosition, setEdges } = useReactFlow();
@@ -60,23 +65,62 @@ export function FloatingEdge({
     [],
   );
 
-  if (!sourceNode || !targetNode) return null;
+  // Compute geometry. Default to zeros when nodes haven't measured yet so
+  // the hook deps below stay stable across renders.
+  let sx = 0;
+  let sy = 0;
+  let tx = 0;
+  let ty = 0;
+  let sourcePos: Position = Position.Bottom;
+  let targetPos: Position = Position.Top;
+  if (sourceNode && targetNode) {
+    const params = getEdgeParams(sourceNode, targetNode, sourceHandleId, targetHandleId);
+    sx = params.sx;
+    sy = params.sy;
+    tx = params.tx;
+    ty = params.ty;
+    sourcePos = params.sourcePos;
+    targetPos = params.targetPos;
+  }
 
-  const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(
-    sourceNode,
-    targetNode,
-    sourceHandleId,
-    targetHandleId,
-  );
-
-  // Natural midpoint between source and target. The user-controllable
-  // override is an offset from this midpoint so dragging a node moves the
-  // elbow with it.
   const midX = (sx + tx) / 2;
   const midY = (sy + ty) / 2;
   const override = (data as { bend?: BendOffset } | undefined)?.bend;
   const centerX = midX + (override?.dx ?? 0);
   const centerY = midY + (override?.dy ?? 0);
+
+  // While dragging, every pointermove updates the bend offset relative to
+  // the midpoint so the elbow follows the cursor. Declared before the
+  // early-return so React sees the same hook order on every render.
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: PointerEvent) => {
+      const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      setEdges((edges) =>
+        edges.map((edge) => {
+          if (edge.id !== id) return edge;
+          const newDx = flowPos.x - midX;
+          const newDy = flowPos.y - midY;
+          return {
+            ...edge,
+            data: { ...(edge.data ?? {}), bend: { dx: newDx, dy: newDy } },
+          };
+        }),
+      );
+    };
+    const onUp = () => setDragging(false);
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+    return () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+    };
+  }, [dragging, id, midX, midY, screenToFlowPosition, setEdges]);
+
+  // -- Render ---------------------------------------------------------
+  if (!sourceNode || !targetNode) return null;
 
   // S-shape guard: getSmoothStepPath leaves each endpoint by `offset` along
   // its perpendicular before bending. When source and target face each
@@ -111,35 +155,6 @@ export function FloatingEdge({
     centerX,
     centerY,
   });
-
-  // While dragging, every pointermove updates the bend offset relative to
-  // the midpoint so the elbow follows the cursor.
-  useEffect(() => {
-    if (!dragging) return;
-    const onMove = (e: PointerEvent) => {
-      const flowPos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-      setEdges((edges) =>
-        edges.map((edge) => {
-          if (edge.id !== id) return edge;
-          const newDx = flowPos.x - midX;
-          const newDy = flowPos.y - midY;
-          return {
-            ...edge,
-            data: { ...(edge.data ?? {}), bend: { dx: newDx, dy: newDy } },
-          };
-        }),
-      );
-    };
-    const onUp = () => setDragging(false);
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-    document.addEventListener('pointercancel', onUp);
-    return () => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
-    };
-  }, [dragging, id, midX, midY, screenToFlowPosition, setEdges]);
 
   return (
     <>
