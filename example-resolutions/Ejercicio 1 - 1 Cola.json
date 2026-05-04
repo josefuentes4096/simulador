@@ -1,0 +1,875 @@
+{
+  "schemaVersion": 2,
+  "metadata": {
+    "name": "Ejercicio 1 — 1 Cola (ejecutable)",
+    "description": "EaE NS, 1 puesto, 1 cola. Versión con sintaxis JS válida para correr con el Step del simulador. El bloque a_arrep_hex es una subrutina (callKind: subroutine, label = nombre del procedimiento Arrepentimiento, assignTo = A). El sub-flujo de Arrepentimiento se ejecuta y deja el resultado en vars.Arrepentimiento, que se copia a A al volver.",
+    "label": "Ejercicio 1 - 1 cola, 1 puesto - Guia Oficial 2015",
+    "creator": "Jose Fuentes",
+    "version": "1.0",
+    "builtWith": "0.2.0.14",
+    "eventTableMode": "independent"
+  },
+  "behavior": {
+    "variables": [
+      {
+        "name": "IA",
+        "kind": "data",
+        "initialValue": 0,
+        "description": "Inter-arribo (exponencial, media 4)"
+      },
+      {
+        "name": "R",
+        "kind": "data",
+        "initialValue": 0,
+        "description": "Aleatorio U(0,1) para el sub-flujo de arrepentimiento"
+      },
+      {
+        "name": "TA",
+        "kind": "data",
+        "initialValue": 0,
+        "description": "Tiempo de atención (exponencial, media 3)"
+      },
+      {
+        "name": "A",
+        "kind": "state",
+        "initialValue": false,
+        "description": "Resultado del cálculo de arrepentimiento"
+      },
+      {
+        "name": "Arrepentimiento",
+        "kind": "state",
+        "initialValue": false,
+        "description": "Bandera del sub-flujo de arrepentimiento"
+      },
+      {
+        "name": "ITO",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Instante en que el servidor quedó ocioso por última vez"
+      },
+      {
+        "name": "NS",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Cantidad en sistema"
+      },
+      {
+        "name": "NT",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Cantidad atendida"
+      },
+      {
+        "name": "SLL",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Sumatoria de tiempos de llegada"
+      },
+      {
+        "name": "SS",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Sumatoria de tiempos de salida"
+      },
+      {
+        "name": "STA",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Sumatoria de tiempos de atención"
+      },
+      {
+        "name": "STO",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Sumatoria de tiempo ocioso del servidor"
+      },
+      {
+        "name": "T",
+        "kind": "state",
+        "initialValue": 0,
+        "description": "Reloj de la simulación"
+      },
+      {
+        "name": "TF",
+        "kind": "state",
+        "initialValue": 10000,
+        "description": "Horizonte de simulación"
+      },
+      {
+        "name": "PA5",
+        "kind": "result",
+        "initialValue": 0,
+        "description": "Probabilidad de arrepentimiento con NS-1=5"
+      },
+      {
+        "name": "PEC",
+        "kind": "result",
+        "initialValue": 0,
+        "description": "Promedio de espera en cola"
+      },
+      {
+        "name": "PPS",
+        "kind": "result",
+        "initialValue": 0,
+        "description": "Promedio de permanencia en sistema"
+      },
+      {
+        "name": "PTO",
+        "kind": "result",
+        "initialValue": 0,
+        "description": "Porcentaje de tiempo ocioso del servidor"
+      },
+      {
+        "name": "SA5",
+        "kind": "result",
+        "initialValue": 0,
+        "description": "Sumatoria de arrepentimientos con NS-1=5"
+      },
+      {
+        "name": "TOTA",
+        "kind": "result",
+        "initialValue": 0,
+        "description": "Total con NS-1>4"
+      },
+      {
+        "name": "TPLL",
+        "kind": "event-table",
+        "description": "Tabla de próximas llegadas"
+      },
+      {
+        "name": "TPS",
+        "kind": "event-table",
+        "description": "Tabla de próximas salidas"
+      }
+    ],
+    "events": [],
+    "tei": [
+      {
+        "event": "Llegada",
+        "tef": "TPLL",
+        "unconditionalNext": "Llegada",
+        "conditionalNext": "Salida",
+        "condition": "NS ==1",
+        "chainer": "IA"
+      },
+      {
+        "event": "Salida",
+        "tef": "TPS",
+        "conditionalNext": "Salida",
+        "condition": "NS <= 1",
+        "chainer": "TA"
+      }
+    ]
+  },
+  "diagram": {
+    "nodes": [
+      {
+        "id": "a_arrep_hex",
+        "type": "routine",
+        "label": "A = Arrepentimiento",
+        "position": {
+          "x": 124.30419539853253,
+          "y": 347.39072926729096
+        },
+        "data": {
+          "callKind": "subroutine"
+        }
+      },
+      {
+        "id": "arrep_entry",
+        "type": "routine",
+        "label": "Arrepentimiento",
+        "position": {
+          "x": 990.0952018034582,
+          "y": 61.37986825673893
+        }
+      },
+      {
+        "id": "arrep_false_top",
+        "type": "assignment",
+        "label": "Arrepentimiento = false",
+        "position": {
+          "x": 760.5600111791128,
+          "y": 433.99599984564446
+        }
+      },
+      {
+        "id": "arrep_true",
+        "type": "assignment",
+        "label": "Arrepentimiento = true",
+        "position": {
+          "x": 1244.2969748044593,
+          "y": 764.0038831518043
+        }
+      },
+      {
+        "id": "ci",
+        "type": "initialConditions",
+        "label": "T = 0\nTPLL = 0\nTPS = HV\nNS = 0\nTF = 10000",
+        "position": {
+          "x": 360.3100550917379,
+          "y": 1.2585488782308403
+        }
+      },
+      {
+        "id": "dec_a_true",
+        "type": "decision",
+        "label": "A == true",
+        "position": {
+          "x": 106.49855512874205,
+          "y": 401.2536638580887
+        },
+        "data": {
+          "flipped": true,
+          "breakpoint": true
+        }
+      },
+      {
+        "id": "dec_ns1_eq_5",
+        "type": "decision",
+        "label": "(NS - 1) == 5",
+        "position": {
+          "x": 1017.5178024395882,
+          "y": 455.2004422705406
+        },
+        "data": {
+          "flipped": true
+        }
+      },
+      {
+        "id": "dec_ns1_gt_4",
+        "type": "decision",
+        "label": "(NS - 1) > 4",
+        "position": {
+          "x": 958.5952018034582,
+          "y": 145.3414450696873
+        },
+        "data": {
+          "flipped": true
+        }
+      },
+      {
+        "id": "dec_ns1_gt_8",
+        "type": "decision",
+        "label": "(NS - 1) > 8",
+        "position": {
+          "x": 1093.43970373941,
+          "y": 232.61884026170065
+        },
+        "data": {
+          "flipped": true
+        }
+      },
+      {
+        "id": "dec_ns_eq_1",
+        "type": "decision",
+        "label": "NS == 1",
+        "position": {
+          "x": 116.7515295068815,
+          "y": 567.1606706137877
+        },
+        "data": {
+          "flipped": false
+        }
+      },
+      {
+        "id": "dec_ns_geq_1",
+        "type": "decision",
+        "label": "NS >= 1",
+        "position": {
+          "x": 497.6142994466626,
+          "y": 333.8074269048589
+        }
+      },
+      {
+        "id": "dec_ns_gt_0",
+        "type": "decision",
+        "label": "NS > 0",
+        "position": {
+          "x": 385.125142955511,
+          "y": 789.9303164096038
+        }
+      },
+      {
+        "id": "dec_r_040",
+        "type": "decision",
+        "label": "R <= 0.4",
+        "position": {
+          "x": 938.8433626685678,
+          "y": 365.1307559255068
+        }
+      },
+      {
+        "id": "dec_t_tf",
+        "type": "decision",
+        "label": "T <= TF",
+        "position": {
+          "x": 269.85005002822567,
+          "y": 743.026596015834
+        }
+      },
+      {
+        "id": "dec_tpll_tps",
+        "type": "decision",
+        "label": "TPLL <= TPS",
+        "position": {
+          "x": 283.310055091738,
+          "y": 132.75254403973923
+        }
+      },
+      {
+        "id": "hacer_cola",
+        "type": "comment",
+        "label": "Hacer cola",
+        "position": {
+          "x": 210.16466133409918,
+          "y": 635.3258600729303
+        }
+      },
+      {
+        "id": "ia_hex",
+        "type": "routine",
+        "label": "IA",
+        "position": {
+          "x": 161.80419539853253,
+          "y": 240.04932168384425
+        },
+        "data": {
+          "callKind": "function",
+          "formula": "RND() / 100"
+        }
+      },
+      {
+        "id": "ito_t",
+        "type": "assignment",
+        "label": "ITO = T",
+        "position": {
+          "x": 619.0860726386179,
+          "y": 385.6135845869486
+        }
+      },
+      {
+        "id": "merge_loop",
+        "type": "connector",
+        "label": "α",
+        "position": {
+          "x": 221.74628758781859,
+          "y": 890.7651885285759
+        }
+      },
+      {
+        "id": "merge_loop_pmol0za8q_0",
+        "type": "connector",
+        "label": "α",
+        "position": {
+          "x": 239.8720872200207,
+          "y": 94.41863242925864
+        }
+      },
+      {
+        "id": "n4_moml76b0",
+        "type": "titleBlock",
+        "label": "",
+        "position": {
+          "x": 1052.1333124363105,
+          "y": 857.7845525376251
+        }
+      },
+      {
+        "id": "ns_dec",
+        "type": "assignment",
+        "label": "NS = NS - 1",
+        "position": {
+          "x": 519.6142994466626,
+          "y": 279.69820781946817
+        }
+      },
+      {
+        "id": "ns_inc",
+        "type": "assignment",
+        "label": "NS = NS + 1",
+        "position": {
+          "x": 16.40482480581153,
+          "y": 454.9506194918187
+        }
+      },
+      {
+        "id": "nt_inc",
+        "type": "assignment",
+        "label": "NT = NT + 1",
+        "position": {
+          "x": 494.71191417686214,
+          "y": 621.9927517701308
+        }
+      },
+      {
+        "id": "output",
+        "type": "salida",
+        "label": "PPS\nPEC\nPTO\nPA5",
+        "position": {
+          "x": 351.21470463690366,
+          "y": 920.9299422362307
+        }
+      },
+      {
+        "id": "pps_calc",
+        "type": "assignment",
+        "label": "PPS = (SS - SLL) / NT\nPEC = (SS - SLL - STA) / NT\nPTO = (STO * 100) / T\nPA5 = (SA5 * 100) / TOTA",
+        "position": {
+          "x": 484.6942630401599,
+          "y": 831.8380854614854
+        }
+      },
+      {
+        "id": "r_random",
+        "type": "routine",
+        "label": "R",
+        "position": {
+          "x": 984.8433626685678,
+          "y": 292.65616266252874
+        },
+        "data": {
+          "callKind": "function",
+          "formula": "RND()"
+        }
+      },
+      {
+        "id": "sa5_inc_bot",
+        "type": "assignment",
+        "label": "SA5 = SA5 + 1",
+        "position": {
+          "x": 1193.7836271441363,
+          "y": 516.8400255360875
+        }
+      },
+      {
+        "id": "sll_inc",
+        "type": "assignment",
+        "label": "SLL = SLL + T",
+        "position": {
+          "x": 14.40482480581153,
+          "y": 504.5140871607549
+        }
+      },
+      {
+        "id": "ss_inc",
+        "type": "assignment",
+        "label": "SS = SS + T",
+        "position": {
+          "x": 497.71191417686214,
+          "y": 567.3455045866115
+        }
+      },
+      {
+        "id": "sta_left",
+        "type": "assignment",
+        "label": "STA = STA + TA",
+        "position": {
+          "x": 31.842989976866008,
+          "y": 781.6051931005034
+        }
+      },
+      {
+        "id": "sta_right",
+        "type": "assignment",
+        "label": "STA = STA + TA",
+        "position": {
+          "x": 395.57188135551405,
+          "y": 498.31171899832657
+        }
+      },
+      {
+        "id": "sto_inc",
+        "type": "assignment",
+        "label": "STO = STO + (T - ITO)",
+        "position": {
+          "x": 18.10944316887735,
+          "y": 624.0101069251527
+        }
+      },
+      {
+        "id": "t_tpll",
+        "type": "assignment",
+        "label": "T = TPLL",
+        "position": {
+          "x": 151.30419539853253,
+          "y": 185.37861789212093
+        }
+      },
+      {
+        "id": "t_tps",
+        "type": "assignment",
+        "label": "T = TPS",
+        "position": {
+          "x": 531.1142994466626,
+          "y": 217.58898873407747
+        }
+      },
+      {
+        "id": "ta_left_hex",
+        "type": "routine",
+        "label": "TA",
+        "position": {
+          "x": 60.34298997686601,
+          "y": 678.5730869646271
+        },
+        "data": {
+          "callKind": "function",
+          "formula": "-Math.log(1 - RND()) * 3"
+        }
+      },
+      {
+        "id": "ta_right_hex",
+        "type": "routine",
+        "label": "TA",
+        "position": {
+          "x": 424.07188135551405,
+          "y": 389.31203845613993
+        },
+        "data": {
+          "callKind": "function",
+          "formula": "-Math.log(1 - RND()) * 3"
+        }
+      },
+      {
+        "id": "tota_inc",
+        "type": "assignment",
+        "label": "TOTA = TOTA + 1",
+        "position": {
+          "x": 1260.2969748044593,
+          "y": 663.970270621385
+        }
+      },
+      {
+        "id": "tpll_hv",
+        "type": "assignment",
+        "label": "TPLL = HV",
+        "position": {
+          "x": 259.6191552901929,
+          "y": 837.8038264198974
+        }
+      },
+      {
+        "id": "tpll_t_ia",
+        "type": "assignment",
+        "label": "TPLL = T + IA",
+        "position": {
+          "x": 138.30419539853253,
+          "y": 292.72002547556764
+        }
+      },
+      {
+        "id": "tps_hv",
+        "type": "assignment",
+        "label": "TPS = HV",
+        "position": {
+          "x": 613.5860726386179,
+          "y": 447.42267458097336
+        }
+      },
+      {
+        "id": "tps_t_ta_left",
+        "type": "assignment",
+        "label": "TPS = T + TA",
+        "position": {
+          "x": 38.34298997686601,
+          "y": 729.5891400325652
+        }
+      },
+      {
+        "id": "tps_t_ta_right",
+        "type": "assignment",
+        "label": "TPS = T + TA",
+        "position": {
+          "x": 402.07188135551405,
+          "y": 443.31187872723325
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "ci",
+        "target": "dec_tpll_tps"
+      },
+      {
+        "id": "e10",
+        "source": "ns_inc",
+        "target": "sll_inc"
+      },
+      {
+        "id": "e11",
+        "source": "sll_inc",
+        "target": "dec_ns_eq_1"
+      },
+      {
+        "id": "e13",
+        "source": "dec_ns_eq_1",
+        "target": "sto_inc",
+        "sourceHandle": "yes",
+        "label": "Sí"
+      },
+      {
+        "id": "e14",
+        "source": "sto_inc",
+        "target": "ta_left_hex"
+      },
+      {
+        "id": "e15",
+        "source": "ta_left_hex",
+        "target": "tps_t_ta_left"
+      },
+      {
+        "id": "e16",
+        "source": "tps_t_ta_left",
+        "target": "sta_left"
+      },
+      {
+        "id": "e18",
+        "source": "t_tps",
+        "target": "ns_dec"
+      },
+      {
+        "id": "e19",
+        "source": "ns_dec",
+        "target": "dec_ns_geq_1"
+      },
+      {
+        "id": "e2",
+        "source": "dec_tpll_tps",
+        "target": "t_tpll",
+        "sourceHandle": "yes",
+        "label": "Sí"
+      },
+      {
+        "id": "e20",
+        "source": "dec_ns_geq_1",
+        "target": "ta_right_hex",
+        "sourceHandle": "yes",
+        "label": "Sí"
+      },
+      {
+        "id": "e21",
+        "source": "dec_ns_geq_1",
+        "target": "ito_t",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e22",
+        "source": "ta_right_hex",
+        "target": "tps_t_ta_right"
+      },
+      {
+        "id": "e23",
+        "source": "tps_t_ta_right",
+        "target": "sta_right"
+      },
+      {
+        "id": "e24",
+        "source": "sta_right",
+        "target": "ss_inc"
+      },
+      {
+        "id": "e25",
+        "source": "ito_t",
+        "target": "tps_hv"
+      },
+      {
+        "id": "e26",
+        "source": "tps_hv",
+        "target": "ss_inc"
+      },
+      {
+        "id": "e27",
+        "source": "ss_inc",
+        "target": "nt_inc"
+      },
+      {
+        "id": "e29",
+        "source": "dec_t_tf",
+        "target": "merge_loop",
+        "sourceHandle": "yes",
+        "label": "Sí"
+      },
+      {
+        "id": "e3",
+        "source": "dec_tpll_tps",
+        "target": "t_tps",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e30",
+        "source": "dec_t_tf",
+        "target": "dec_ns_gt_0",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e32",
+        "source": "dec_ns_gt_0",
+        "target": "tpll_hv",
+        "sourceHandle": "yes",
+        "label": "Sí"
+      },
+      {
+        "id": "e33",
+        "source": "dec_ns_gt_0",
+        "target": "pps_calc",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e34",
+        "source": "tpll_hv",
+        "target": "merge_loop"
+      },
+      {
+        "id": "e35",
+        "source": "pps_calc",
+        "target": "output"
+      },
+      {
+        "id": "e36",
+        "source": "arrep_entry",
+        "target": "dec_ns1_gt_4"
+      },
+      {
+        "id": "e37",
+        "source": "dec_ns1_gt_4",
+        "target": "arrep_false_top",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e38",
+        "source": "dec_ns1_gt_4",
+        "target": "dec_ns1_gt_8",
+        "sourceHandle": "yes",
+        "label": "Sí"
+      },
+      {
+        "id": "e4",
+        "source": "t_tpll",
+        "target": "ia_hex"
+      },
+      {
+        "id": "e40",
+        "source": "dec_ns1_gt_8",
+        "target": "r_random",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e42",
+        "source": "r_random",
+        "target": "dec_r_040"
+      },
+      {
+        "id": "e44",
+        "source": "dec_r_040",
+        "target": "dec_ns1_eq_5",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e45",
+        "source": "dec_ns1_eq_5",
+        "target": "sa5_inc_bot",
+        "sourceHandle": "yes",
+        "label": "Sí"
+      },
+      {
+        "id": "e46",
+        "source": "dec_ns1_eq_5",
+        "target": "tota_inc",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "e47",
+        "source": "sa5_inc_bot",
+        "target": "tota_inc"
+      },
+      {
+        "id": "e48",
+        "source": "tota_inc",
+        "target": "arrep_true"
+      },
+      {
+        "id": "e5",
+        "source": "ia_hex",
+        "target": "tpll_t_ia"
+      },
+      {
+        "id": "e6",
+        "source": "tpll_t_ia",
+        "target": "a_arrep_hex"
+      },
+      {
+        "id": "e7",
+        "source": "a_arrep_hex",
+        "target": "dec_a_true"
+      },
+      {
+        "id": "e8",
+        "source": "dec_a_true",
+        "target": "ns_inc",
+        "sourceHandle": "no",
+        "label": "No"
+      },
+      {
+        "id": "xy-edge__dec_a_trueyes-dec_t_tf",
+        "source": "dec_a_true",
+        "target": "dec_t_tf",
+        "sourceHandle": "yes"
+      },
+      {
+        "id": "xy-edge__dec_ns1_gt_8yes-tota_inc",
+        "source": "dec_ns1_gt_8",
+        "target": "tota_inc",
+        "sourceHandle": "yes"
+      },
+      {
+        "id": "xy-edge__dec_ns_eq_1no-dec_t_tf",
+        "source": "dec_ns_eq_1",
+        "target": "dec_t_tf",
+        "sourceHandle": "no"
+      },
+      {
+        "id": "xy-edge__dec_r_040yes-arrep_false_top",
+        "source": "dec_r_040",
+        "target": "arrep_false_top",
+        "sourceHandle": "yes"
+      },
+      {
+        "id": "xy-edge__merge_loop_pmol0za8q_0-merge_loop_pmol0za8q_0t-left",
+        "source": "merge_loop_pmol0za8q_0",
+        "target": "merge_loop_pmol0za8q_0",
+        "targetHandle": "t-left"
+      },
+      {
+        "id": "xy-edge__merge_loop_pmol0za8q_0s-right-dec_tpll_tps",
+        "source": "merge_loop_pmol0za8q_0",
+        "target": "dec_tpll_tps",
+        "sourceHandle": "s-right"
+      },
+      {
+        "id": "xy-edge__nt_inc-dec_t_tf",
+        "source": "nt_inc",
+        "target": "dec_t_tf"
+      },
+      {
+        "id": "xy-edge__sta_left-dec_t_tf",
+        "source": "sta_left",
+        "target": "dec_t_tf"
+      }
+    ],
+    "viewport": {
+      "x": 22.147493417987107,
+      "y": 38.75421633043703,
+      "zoom": 0.7578582832551993
+    }
+  }
+}

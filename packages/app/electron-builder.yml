@@ -1,0 +1,38 @@
+appId: com.simulador.flow
+productName: Simulador
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - package.json
+  - "!node_modules/**/*.{md,map,ts}"
+extraResources:
+  - from: ../ui/dist
+    to: ui
+  - from: ../../example-resolutions
+    to: examples
+  # Window icon for the runtime BrowserWindow + per-platform OS-level icons.
+  # electron-builder also picks the right format from build/ for each
+  # target: icon.ico (Windows installer/.exe), icon.icns (macOS .app/.dmg),
+  # icon.png (Linux AppImage). All three are produced by `npm run
+  # icons:build` from the canonical `Icono.png` at the repo root.
+  - from: build
+    to: build
+    filter:
+      - "icon.*"
+asar: true
+win:
+  target: nsis
+mac:
+  target: dmg
+  category: public.app-category.developer-tools
+linux:
+  target: AppImage
+  category: Development
+publish:
+  # Owner/repo are inferred from the .git remote URL at build time. The CI
+  # workflow injects GH_TOKEN so electron-builder can upload assets to the
+  # draft release matching the pushed tag.
+  provider: github
+  releaseType: draft

@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simulador.local/schemas/model.schema.json",
+  "title": "SimulationModel",
+  "type": "object",
+  "required": ["schemaVersion", "metadata", "behavior", "diagram"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "simulationType": { "enum": ["event-to-event", "delta-t-constant"] },
+        "eventTableMode": { "enum": ["unified", "independent"] }
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "required": ["variables", "events"],
+      "additionalProperties": false,
+      "properties": {
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "kind"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+              "kind": { "enum": ["state", "result", "control", "data", "array", "event-table", "event-table-array"] },
+              "initialValue": {
+                "oneOf": [
+                  { "type": "number" },
+                  { "type": "string" },
+                  { "type": "boolean" },
+                  { "type": "array", "items": { "type": "number" } }
+                ]
+              },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "handler"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "handler": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "initialEvents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["time", "name"],
+            "additionalProperties": false,
+            "properties": {
+              "time": { "type": "number", "minimum": 0 },
+              "name": { "type": "string" },
+              "payload": {}
+            }
+          }
+        },
+        "tei": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["event"],
+            "additionalProperties": false,
+            "properties": {
+              "tef": { "type": "string" },
+              "event": { "type": "string" },
+              "unconditionalNext": { "type": "string" },
+              "conditionalNext": { "type": "string" },
+              "condition": { "type": "string" },
+              "chainer": { "type": "string" },
+              "regret": { "type": "boolean" },
+              "vector": { "type": "boolean" },
+              "dimension": { "type": "string" }
+            }
+          }
+        },
+        "deltaT": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tef": { "type": "string" },
+              "propios": { "type": "string" },
+              "prevCommitted": { "type": "string" },
+              "futureCommitted": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "diagram": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "additionalProperties": false,
+      "properties": {
+        "viewport": {
+          "type": "object",
+          "required": ["x", "y", "zoom"],
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "zoom": { "type": "number", "minimum": 0 }
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "type": "string" },
+              "label": { "type": "string" },
+              "position": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "x": { "type": "number" },
+                  "y": { "type": "number" }
+                }
+              },
+              "data": { "type": "object" }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "source", "target"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string" },
+              "source": { "type": "string" },
+              "target": { "type": "string" },
+              "sourceHandle": { "type": "string" },
+              "targetHandle": { "type": "string" },
+              "label": { "type": "string" },
+              "controlPoints": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "required": ["dx", "dy"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "dx": { "type": "number" },
+                    "dy": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

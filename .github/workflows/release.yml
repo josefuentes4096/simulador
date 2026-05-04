@@ -1,0 +1,63 @@
+name: Release
+
+# Triggered by pushing a tag like `v0.1.0`. Builds installers for the three
+# major platforms and uploads them to a draft GitHub Release for that tag.
+# After the workflow finishes, go to the Releases page in GitHub and click
+# "Publish release" to make the assets public.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build for ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+          - os: macos-latest
+            label: macOS
+          - os: ubuntu-latest
+            label: Linux
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync package.json version with the pushed tag
+        # Strips the leading "v" from the tag (e.g. refs/tags/v0.2.7 -> 0.2.7)
+        # and propagates it to all workspace package.json files. This is
+        # done at build time only — the bump is not committed back to the
+        # repo, but it ensures the .exe / .dmg / .AppImage filenames always
+        # match the tag that triggered the release.
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "Tag version: $VERSION"
+          node scripts/version-bump.mjs "$VERSION"
+
+      - name: Build (typecheck + Vite)
+        run: npm run build
+
+      - name: Package and publish to GitHub Release
+        run: npm run release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

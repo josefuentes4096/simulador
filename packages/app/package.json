@@ -1,0 +1,33 @@
+{
+  "name": "@simulador/app",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Editor visual de simulaciones de eventos discretos (DES) y simulación dinámica.",
+  "author": "Jose Fuentes",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/josefuentes4096/simulador.git"
+  },
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rimraf dist *.tsbuildinfo",
+    "dev": "concurrently -k -n ui,main,electron -c blue,green,magenta \"npm:dev:ui\" \"npm:dev:main\" \"npm:dev:electron\"",
+    "dev:ui": "npm run dev --workspace @simulador/ui",
+    "dev:main": "tsc -b --watch --preserveWatchOutput",
+    "dev:electron": "wait-on tcp:5173 dist/main.js && electron .",
+    "start": "electron .",
+    "package": "electron-builder --config electron-builder.yml",
+    "release": "electron-builder --config electron-builder.yml --publish always"
+  },
+  "dependencies": {
+    "@simulador/shared": "*"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "electron": "32.2.0",
+    "electron-builder": "^25.1.8",
+    "wait-on": "^8.0.1"
+  }
+}
