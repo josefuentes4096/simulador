@@ -1,4 +1,5 @@
 import type { ModelEdge, ModelNode, ModelVariable, SimulationModel } from '@simulador/shared';
+import { parseSubroutineEntry, parseSubroutineLabel } from '../state/diagramAnalysis';
 
 // === Compiled IR =====================================================
 // One CompiledFlow per "callable" — the main flow plus one per declared
@@ -49,6 +50,14 @@ function findOutgoing(
   return edges.find(
     (e) =>
       e.source === nodeId &&
+      // Self-loop guard: data files occasionally have corrupted edges where
+      // a node points to itself (typically a connector created by mistake
+      // during a hovering drag). Without this filter the emitted code would
+      // read `pc = N` from inside `case N`, locking the program in an
+      // infinite no-op loop. The runtime simulator already tolerates this
+      // because it falls back to the connector goto-by-label resolution,
+      // but the emitter has no such fallback at runtime.
+      e.target !== nodeId &&
       (handle === undefined || (e.sourceHandle ?? null) === handle),
   );
 }
@@ -81,9 +90,13 @@ function findProcedureEntry(name: string, nodes: ModelNode[]): ModelNode | null 
   if (!target) return null;
   for (const n of nodes) {
     if (n.type !== 'routine') continue;
-    if ((n.label ?? '').trim() !== target) continue;
     const data = (n.data ?? {}) as RoutineData;
+    // Entry blocks have neither callKind === 'subroutine' (call site) nor
+    // 'function' (data generator). They're "plain" routines, possibly with
+    // parameters declared in their label (e.g. "Arrepentimiento TE, I").
     if (data.callKind === 'subroutine' || data.callKind === 'function') continue;
+    const entryName = parseSubroutineEntry(n.label ?? '').procName;
+    if (entryName !== target) continue;
     return n;
   }
   return null;
@@ -137,7 +150,11 @@ function compileFlow(
     } else {
       const data = (node.data ?? {}) as RoutineData;
       if (node.type === 'routine' && data.callKind === 'subroutine') {
-        const procName = (node.label ?? '').trim();
+        // The call-site label is `[Y = ]NAME[ arg1, arg2, ...]`. Pull the
+        // procedure name out cleanly so a call like "A = Arrepentimiento"
+        // resolves to the entry "Arrepentimiento" instead of being looked
+        // up by the full string.
+        const procName = parseSubroutineLabel(node.label ?? '').procName.trim();
         if (procName && !visitedProcs.has(procName)) {
           visitedProcs.add(procName);
           const entry = findProcedureEntry(procName, allNodes);

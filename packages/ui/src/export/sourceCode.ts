@@ -1,4 +1,5 @@
 import type { ModelVariable, SimulationModel } from '@simulador/shared';
+import { parseSubroutineLabel } from '../state/diagramAnalysis';
 import {
   compileModel,
   rewriteEventTables,
@@ -205,19 +206,27 @@ function emitBody(
           out.push(translated.endsWith(';') ? translated : `${translated}${stmtEnd}`);
         }
       } else if (data.callKind === 'subroutine') {
-        const procName = sanitizeIdent(label);
-        if (cm.procedures.has(label.trim())) {
+        // Parse `[Y = ]NAME[ args]` so the lookup matches the procedures
+        // map (which is keyed by NAME, not by the full label). Without
+        // this, calls like "A = Arrepentimiento" never resolved and the
+        // emitted code was a silent no-op — leaving any conditional that
+        // depended on the call's return value stuck on its initial value
+        // and breaking the simulation's halt logic.
+        const parsed = parseSubroutineLabel(label);
+        const procKey = parsed.procName.trim();
+        const procIdent = sanitizeIdent(procKey);
+        if (procKey && cm.procedures.has(procKey)) {
           // Procedure exists — emit a real function call. In Go we prefix
           // with `proc_` to dodge the "field and method with same name" error
           // (Arrepentimiento is both a state field and a procedure).
           if (lang === 'go') {
-            out.push(`s.proc_${procName}()`);
+            out.push(`s.proc_${procIdent}()`);
           } else {
-            out.push(`${procName}()${stmtEnd}`);
+            out.push(`${procIdent}()${stmtEnd}`);
           }
           const assignTo = procReturnAssignTo(label.trim(), node.id);
           if (assignTo) {
-            out.push(`${assignTo} = ${procName}${stmtEnd}`);
+            out.push(`${assignTo} = ${procIdent}${stmtEnd}`);
           }
         } else {
           out.push(`/* subrutina "${label}" sin entry — no-op */`);
@@ -310,10 +319,21 @@ export function toCpp(model: SimulationModel): string {
     cm.mainFlow,
     cm,
     (_procName, callerNodeId) => {
-      const caller = cm.mainFlow.nodes.get(callerNodeId);
+      // Search all flows (main + procedures) — a subroutine can call
+      // another subroutine, so the caller node may live in any compiled
+      // flow. Returns the assignTo declared in the call's label
+      // (`Y = X args` syntax). The legacy `data.assignTo` field is gone
+      // since the label-based form is the canonical source of truth.
+      let caller = cm.mainFlow.nodes.get(callerNodeId);
+      if (!caller) {
+        for (const flow of cm.procedures.values()) {
+          caller = flow.nodes.get(callerNodeId);
+          if (caller) break;
+        }
+      }
       if (!caller) return undefined;
-      const data = (caller.node.data ?? {}) as { assignTo?: string };
-      return data.assignTo && data.assignTo.trim() ? data.assignTo.trim() : undefined;
+      const parsed = parseSubroutineLabel(caller.node.label ?? '');
+      return parsed.assignTo ?? undefined;
     },
   );
 
@@ -450,10 +470,21 @@ export function toJava(model: SimulationModel): string {
     cm.mainFlow,
     cm,
     (_procName, callerNodeId) => {
-      const caller = cm.mainFlow.nodes.get(callerNodeId);
+      // Search all flows (main + procedures) — a subroutine can call
+      // another subroutine, so the caller node may live in any compiled
+      // flow. Returns the assignTo declared in the call's label
+      // (`Y = X args` syntax). The legacy `data.assignTo` field is gone
+      // since the label-based form is the canonical source of truth.
+      let caller = cm.mainFlow.nodes.get(callerNodeId);
+      if (!caller) {
+        for (const flow of cm.procedures.values()) {
+          caller = flow.nodes.get(callerNodeId);
+          if (caller) break;
+        }
+      }
       if (!caller) return undefined;
-      const data = (caller.node.data ?? {}) as { assignTo?: string };
-      return data.assignTo && data.assignTo.trim() ? data.assignTo.trim() : undefined;
+      const parsed = parseSubroutineLabel(caller.node.label ?? '');
+      return parsed.assignTo ?? undefined;
     },
   );
 
@@ -612,10 +643,21 @@ export function toGo(model: SimulationModel): string {
     cm.mainFlow,
     cm,
     (_procName, callerNodeId) => {
-      const caller = cm.mainFlow.nodes.get(callerNodeId);
+      // Search all flows (main + procedures) — a subroutine can call
+      // another subroutine, so the caller node may live in any compiled
+      // flow. Returns the assignTo declared in the call's label
+      // (`Y = X args` syntax). The legacy `data.assignTo` field is gone
+      // since the label-based form is the canonical source of truth.
+      let caller = cm.mainFlow.nodes.get(callerNodeId);
+      if (!caller) {
+        for (const flow of cm.procedures.values()) {
+          caller = flow.nodes.get(callerNodeId);
+          if (caller) break;
+        }
+      }
       if (!caller) return undefined;
-      const data = (caller.node.data ?? {}) as { assignTo?: string };
-      return data.assignTo && data.assignTo.trim() ? data.assignTo.trim() : undefined;
+      const parsed = parseSubroutineLabel(caller.node.label ?? '');
+      return parsed.assignTo ?? undefined;
     },
   );
 

@@ -63,7 +63,13 @@ describe('source code emitters compile', () => {
     try {
       const out = execSync(`java -cp "${OUT}" Simulation`, {
         encoding: 'utf8',
-        timeout: 30000,
+        // 120s, not 30s: the emitter inlines the full diagram into a giant
+        // switch — no horizon shortcut — so a TF=10000 model with mean
+        // inter-arrival 4 chews through ~2500 events × subroutines × per-step
+        // PRNG work. Local with warm JIT it's <10s, but CI runners + cold
+        // JVM start regularly hit 30-60s. Keep this generous so the test is
+        // checking "the code compiles and exits cleanly", not a perf SLA.
+        timeout: 120000,
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       console.log('Java run output:\n', out);
@@ -72,7 +78,7 @@ describe('source code emitters compile', () => {
       console.error('java run FAILED:\n', err.stderr ?? err.message);
       throw e;
     }
-  });
+  }, 150000);
 
   it('Go: sim runs', () => {
     try {
@@ -81,7 +87,9 @@ describe('source code emitters compile', () => {
       const out = execSync(`go run sim.go`, {
         cwd: OUT,
         encoding: 'utf8',
-        timeout: 30000,
+        // Same rationale as the Java test: avoid a tight SLA and let
+        // slower CI runners finish.
+        timeout: 120000,
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       console.log('Go run output:\n', out);
@@ -90,10 +98,11 @@ describe('source code emitters compile', () => {
       console.error('go run FAILED:\n', err.stderr ?? err.message);
       throw e;
     }
-  });
+  }, 150000);
 });
 
 afterAll(() => {
+  if (process.env.KEEP_COMPILE_CHECK_OUT) return;
   try {
     rmSync(OUT, { recursive: true });
   } catch {
