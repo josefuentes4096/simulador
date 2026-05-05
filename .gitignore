@@ -1,0 +1,22 @@
+# Node / build outputs
+node_modules/
+dist/
+out/
+build/
+.vite/
+*.tsbuildinfo
+coverage/
+.eslintcache
+release/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs / env
+*.log
+.env
+.env.local
+.env.*.local

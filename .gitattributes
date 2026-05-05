@@ -1,0 +1,14 @@
+# Normalize line endings to LF in the repo. Windows checkouts get CRLF on
+# disk via core.autocrlf, but the version stored in git is always LF — keeps
+# diffs clean across platforms.
+* text=auto eol=lf
+
+# Binary types that should never be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.pdf binary
+*.zip binary

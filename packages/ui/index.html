@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      'unsafe-eval' is required because the flowchart stepper compiles user
+      expressions (assignment / decision / formula labels) via new Function().
+      Risk is bounded: the only code evaluated comes from the loaded model
+      file, which the user authored or fetched from a trusted resolution repo.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://localhost:5173 http://localhost:5173"
+    />
+    <link rel="icon" type="image/png" href="/icono.png" />
+    <title>Simulador</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
