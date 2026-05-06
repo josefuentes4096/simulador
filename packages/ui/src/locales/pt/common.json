@@ -79,7 +79,7 @@
     "assignTo": "Atribuir a",
     "assignToPlaceholder": "(opcional)",
     "subroutineHint": "Rótulo: «X», «Y = X», «X arg1, arg2» ou «Y = X arg1, arg2». X é o procedimento; args são avaliados no chamador e ligados aos parâmetros declarados no entry. Mutações a elementos de arranjo (X[i] = …) propagam; reatribuição completa do parâmetro fica local.",
-    "functionLinks": "Gera a variável «{{name}}» (tipo Dado)",
+    "functionLinks": "Gera a variável «{name}» (tipo Dado)",
     "functionNeedsLabel": "Rotule o bloco com o nome da variável Dado que gera"
   },
   "actions": {
@@ -222,9 +222,9 @@
     "autoCheck": "Buscar atualizações ao iniciar"
   },
   "update": {
-    "available": "Versão {{version}} disponível",
-    "downloading": "Baixando {{percent}}% ({{transferred}} / {{total}})",
-    "downloaded": "Versão {{version}} pronta para instalar",
+    "available": "Versão {version} disponível",
+    "downloading": "Baixando {percent}% ({transferred} / {total})",
+    "downloaded": "Versão {version} pronta para instalar",
     "notAvailable": "Você está na versão mais recente",
     "error": "Erro ao buscar atualizações",
     "download": "Baixar",

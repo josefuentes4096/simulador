@@ -79,7 +79,7 @@
     "assignTo": "Assign to",
     "assignToPlaceholder": "(optional)",
     "subroutineHint": "Label: «X», «Y = X», «X arg1, arg2» or «Y = X arg1, arg2». X is the procedure; args are evaluated in the caller and bound to the parameters declared in the entry. Mutations to array elements (X[i] = …) propagate; whole-parameter reassignment stays local.",
-    "functionLinks": "Generates the «{{name}}» variable (Data type)",
+    "functionLinks": "Generates the «{name}» variable (Data type)",
     "functionNeedsLabel": "Label the block with the name of the Data variable it generates"
   },
   "actions": {
@@ -222,9 +222,9 @@
     "autoCheck": "Check for updates on startup"
   },
   "update": {
-    "available": "Version {{version}} available",
-    "downloading": "Downloading {{percent}}% ({{transferred}} / {{total}})",
-    "downloaded": "Version {{version}} ready to install",
+    "available": "Version {version} available",
+    "downloading": "Downloading {percent}% ({transferred} / {total})",
+    "downloaded": "Version {version} ready to install",
     "notAvailable": "You're on the latest version",
     "error": "Update check failed",
     "download": "Download",
