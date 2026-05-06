@@ -137,20 +137,11 @@ export function App() {
 
   // Snapshot the model into the history stack ~700ms after the last change.
   // This coalesces typing in label/handler inputs into one history entry.
-  const serializedSnapshot = useMemo(
-    () => model.serialize(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      model.name,
-      model.description,
-      model.variables,
-      model.events,
-      model.initialEvents,
-      model.nodes,
-      model.edges,
-      model.viewport,
-    ],
-  );
+  // We depend on `model.serialize`'s identity (a useCallback whose deps
+  // already cover every field it reads) instead of duplicating the field
+  // list here — the previous explicit list was missing dynamic-mode state,
+  // which is why Ctrl+Z had nothing to undo on dynamic models.
+  const serializedSnapshot = useMemo(() => model.serialize(), [model.serialize]);
   useEffect(() => {
     const id = setTimeout(() => history.push(serializedSnapshot), 700);
     return () => clearTimeout(id);
@@ -898,6 +889,7 @@ export function App() {
             onToggleConnectMode={() => setConnectMode((v) => !v)}
             dynamicEdgeMode={dynamicEdgeMode}
             setDynamicEdgeMode={setDynamicEdgeMode}
+            setPendingSource={setPendingSource}
             snapToGrid={snapToGrid}
             onToggleSnapToGrid={() => setSnapToGrid((v) => !v)}
             nodes={model.simulationType === 'dynamic' ? model.dynamicNodes : model.nodes}

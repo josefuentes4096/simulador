@@ -1,5 +1,6 @@
 import { Handle, Position, type NodeProps, type NodeTypes } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
+import { TitleBlockNode } from './nodes';
 
 // Visual node components for the dynamic-simulation (Stella/iThink-style)
 // editor surface. They live in this separate module so the discrete-mode
@@ -119,14 +120,12 @@ export function StellaCommentNode({ data, selected }: NodeProps<DynamicNodeT>) {
 }
 
 // --- Label --------------------------------------------------------------
-// Small "label box". Like a title plate without grid lines. No handles.
-export function StellaLabelNode({ data, selected }: NodeProps<DynamicNodeT>) {
-  return (
-    <div className={`node node--stella-label ${selected ? 'node--selected' : ''}`}>
-      <div className="node--stella-label__text">{data.text ?? data.name ?? ''}</div>
-    </div>
-  );
-}
+// Title block / cartouche — same component the discrete editor uses, so
+// the rótulo block looks and behaves identically across simulation types.
+// Bound to the model metadata (title / author / date / version) via
+// TitleBlockContext, which is provided high in App.tsx and is in scope
+// regardless of the active simulation type.
+export const StellaLabelNode = TitleBlockNode;
 
 export const DYNAMIC_NODE_TYPES: NodeTypes = {
   stock: StockNode,

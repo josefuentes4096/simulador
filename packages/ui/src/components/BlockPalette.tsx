@@ -18,6 +18,9 @@ interface Props {
   // or 'connector' = drawing mode (click source then target).
   dynamicEdgeMode?: 'flow' | 'connector' | null;
   setDynamicEdgeMode?: (m: 'flow' | 'connector' | null) => void;
+  // Dynamic-only: clears the click-click pending source so a half-drawn
+  // edge doesn't latch when the user switches tools mid-draw.
+  setPendingSource?: (id: string | null) => void;
   snapToGrid: boolean;
   onToggleSnapToGrid: () => void;
   nodes: Node[];
@@ -49,10 +52,14 @@ function DynamicNodeIcon({ kind }: { kind: DynamicNodeKind }) {
       </svg>
     );
   }
-  // label
+  // label — same iconography as the discrete-mode `titleBlock` (heavy
+  // outer rect with two internal divider lines), so the rótulo block
+  // looks identical regardless of simulation type.
   return (
-    <svg width="35" height="22" viewBox="0 0 28 18" aria-hidden="true">
-      <rect x="2" y="6" width="24" height="6" stroke="currentColor" strokeWidth="1.2" fill="none" />
+    <svg width="35" height="22" viewBox="0 0 22 14" aria-hidden="true">
+      <rect x="1" y="1" width="20" height="12" stroke="currentColor" strokeWidth={2.4} fill="none" />
+      <line x1="1" y1="6" x2="21" y2="6" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="11" y1="6" x2="11" y2="13" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -224,6 +231,7 @@ export function BlockPalette({
   onToggleConnectMode,
   dynamicEdgeMode,
   setDynamicEdgeMode,
+  setPendingSource,
   snapToGrid,
   onToggleSnapToGrid,
   nodes,
@@ -235,6 +243,14 @@ export function BlockPalette({
   const canAlign = selectedCount >= 2;
   const canDistribute = selectedCount >= 3;
   const isDynamic = simulationType === 'dynamic';
+  // Clicking any non-edge tool in the palette must drop the active edge
+  // tool (Flow / Action Connector) and any half-drawn click-click endpoint,
+  // otherwise the previous tool stays "armed" and the next click on the
+  // canvas creates an unintended edge.
+  const resetEdgeTools = () => {
+    setDynamicEdgeMode?.(null);
+    setPendingSource?.(null);
+  };
   return (
     <aside className="block-palette" aria-label={t('palette.ariaLabel')}>
       {/* Discrete-mode blocks (assignment, decision, routine, ...). */}
@@ -265,7 +281,10 @@ export function BlockPalette({
             <button
               key={o.value}
               type="button"
-              onClick={() => onAddDynamicNode(o.rfType, o.value)}
+              onClick={() => {
+                resetEdgeTools();
+                onAddDynamicNode(o.rfType, o.value);
+              }}
               title={t('palette.addNodeTitle', { label })}
               aria-label={t('palette.addNodeAria', { label })}
               className="block-palette__btn"
@@ -295,9 +314,13 @@ export function BlockPalette({
         <>
           <button
             type="button"
-            onClick={() =>
-              setDynamicEdgeMode(dynamicEdgeMode === 'flow' ? null : 'flow')
-            }
+            onClick={() => {
+              // Toggling either edge tool also clears any half-drawn endpoint —
+              // a left-over pendingSource would latch the next click on the
+              // canvas to whatever tool is now active.
+              setPendingSource?.(null);
+              setDynamicEdgeMode(dynamicEdgeMode === 'flow' ? null : 'flow');
+            }}
             aria-pressed={dynamicEdgeMode === 'flow'}
             title={t('palette.flowToolTitle')}
             aria-label={t('palette.flowToolAria')}
@@ -309,9 +332,10 @@ export function BlockPalette({
           </button>
           <button
             type="button"
-            onClick={() =>
-              setDynamicEdgeMode(dynamicEdgeMode === 'connector' ? null : 'connector')
-            }
+            onClick={() => {
+              setPendingSource?.(null);
+              setDynamicEdgeMode(dynamicEdgeMode === 'connector' ? null : 'connector');
+            }}
             aria-pressed={dynamicEdgeMode === 'connector'}
             title={t('palette.connectorToolTitle')}
             aria-label={t('palette.connectorToolAria')}
@@ -326,7 +350,10 @@ export function BlockPalette({
       <div className="block-palette__divider" aria-hidden="true" />
       <button
         type="button"
-        onClick={() => setNodes((ns) => alignSelected(ns, 'x'))}
+        onClick={() => {
+          resetEdgeTools();
+          setNodes((ns) => alignSelected(ns, 'x'));
+        }}
         disabled={!canAlign}
         title={t('palette.alignVerticalTitle')}
         aria-label={t('palette.alignVerticalAria')}
@@ -336,7 +363,10 @@ export function BlockPalette({
       </button>
       <button
         type="button"
-        onClick={() => setNodes((ns) => alignSelected(ns, 'y'))}
+        onClick={() => {
+          resetEdgeTools();
+          setNodes((ns) => alignSelected(ns, 'y'));
+        }}
         disabled={!canAlign}
         title={t('palette.alignHorizontalTitle')}
         aria-label={t('palette.alignHorizontalAria')}
@@ -346,7 +376,10 @@ export function BlockPalette({
       </button>
       <button
         type="button"
-        onClick={() => setNodes((ns) => distributeSelected(ns, 'x'))}
+        onClick={() => {
+          resetEdgeTools();
+          setNodes((ns) => distributeSelected(ns, 'x'));
+        }}
         disabled={!canDistribute}
         title={t('palette.distributeHorizontalTitle')}
         aria-label={t('palette.distributeHorizontalAria')}
@@ -356,7 +389,10 @@ export function BlockPalette({
       </button>
       <button
         type="button"
-        onClick={() => setNodes((ns) => distributeSelected(ns, 'y'))}
+        onClick={() => {
+          resetEdgeTools();
+          setNodes((ns) => distributeSelected(ns, 'y'));
+        }}
         disabled={!canDistribute}
         title={t('palette.distributeVerticalTitle')}
         aria-label={t('palette.distributeVerticalAria')}
@@ -367,7 +403,10 @@ export function BlockPalette({
       <div className="block-palette__divider" aria-hidden="true" />
       <button
         type="button"
-        onClick={onToggleSnapToGrid}
+        onClick={() => {
+          resetEdgeTools();
+          onToggleSnapToGrid();
+        }}
         aria-pressed={snapToGrid}
         title={t('palette.snapTitle')}
         aria-label={t('palette.snapAria')}
