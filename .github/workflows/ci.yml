@@ -23,6 +23,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Build icons
+        # Catches breakage in scripts/build-icons.mjs before it reaches the
+        # release workflow, where the same step gates the installer icon.
+        run: npm run icons:build
+
       - name: Typecheck
         run: npm run typecheck
 

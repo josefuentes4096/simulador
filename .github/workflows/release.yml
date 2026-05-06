@@ -55,6 +55,13 @@ jobs:
           echo "Tag version: $VERSION"
           node scripts/version-bump.mjs "$VERSION"
 
+      - name: Build icons
+        # Generates packages/app/build/icon.{ico,png,icns} from the canonical
+        # icon.png. Required for the installer + window icon — without this
+        # step the build directory is empty and electron-builder falls back
+        # to its default Electron icon.
+        run: npm run icons:build
+
       - name: Build (typecheck + Vite)
         run: npm run build
 
