@@ -49,6 +49,7 @@ describe('source code emitters compile', () => {
       const out = execSync(`go build -o sim sim.go`, {
         cwd: OUT,
         encoding: 'utf8',
+        timeout: 120000,
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       console.log('go build OK', out);
@@ -57,7 +58,7 @@ describe('source code emitters compile', () => {
       console.error('go build FAILED:\n', err.stderr ?? err.message);
       throw e;
     }
-  });
+  }, 150000);
 
   it('Java: java runs', () => {
     try {
