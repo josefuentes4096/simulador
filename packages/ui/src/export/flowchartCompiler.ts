@@ -199,6 +199,43 @@ const RESERVED_IDENTS = new Set([
   'throw', 'try', 'catch',
 ]);
 
+// Identifiers the diagram uses as booleans — assigned `true`/`false` or
+// compared with `true`/`false`. The emitter needs this so the auto-declared
+// state field is typed as `bool`/`boolean` instead of `float64`/`double`.
+// Variables explicitly declared in the Variables panel are not affected:
+// the user's declared `initialValue` already drives the type.
+function collectBoolIdentifiers(nodes: ModelNode[]): Set<string> {
+  const out = new Set<string>();
+  const assignRe = /\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:true|false)\b/g;
+  const cmpLhsRe = /\b([A-Za-z_][A-Za-z0-9_]*)\s*(?:===|!==|==|!=)\s*(?:true|false)\b/g;
+  const cmpRhsRe = /\b(?:true|false)\s*(?:===|!==|==|!=)\s*([A-Za-z_][A-Za-z0-9_]*)\b/g;
+
+  const collect = (text: string) => {
+    let m: RegExpExecArray | null;
+    assignRe.lastIndex = 0;
+    while ((m = assignRe.exec(text)) !== null) out.add(m[1]!);
+    cmpLhsRe.lastIndex = 0;
+    while ((m = cmpLhsRe.exec(text)) !== null) out.add(m[1]!);
+    cmpRhsRe.lastIndex = 0;
+    while ((m = cmpRhsRe.exec(text)) !== null) out.add(m[1]!);
+  };
+
+  for (const node of nodes) {
+    if (
+      node.type === 'initialConditions' ||
+      node.type === 'assignment' ||
+      node.type === 'decision'
+    ) {
+      collect(node.label ?? '');
+    }
+    const data = (node.data ?? {}) as RoutineData;
+    if (node.type === 'routine' && data.callKind === 'function' && data.formula) {
+      collect(data.formula);
+    }
+  }
+  return out;
+}
+
 // Walk every label that the emitter will translate (init / assignment /
 // decision / function-routine formulas) and collect bare identifiers. We
 // exclude member access (`Math.log`) and call targets (`Foo(`) so procedure
@@ -266,9 +303,14 @@ export function compileModel(model: SimulationModel): CompiledModel {
   // Auto-declare every other identifier the diagram references but the user
   // never declared. The runtime tolerates this (vars start at 0 on first
   // write); the emitter cannot, since Java/Go/C++ require typed fields.
+  // Identifiers used as booleans (assigned or compared with true/false) get
+  // a `false` seed so the emitter's `typeof initialValue === 'boolean'`
+  // rule promotes them to `bool` / `boolean`.
+  const boolIdents = collectBoolIdentifiers(allNodes);
   for (const name of collectUsedIdentifiers(allNodes)) {
     if (declared.has(name) || RESERVED_IDENTS.has(name) || eventTables.has(name)) continue;
-    extraVars.push({ name, kind: 'state', initialValue: 0 });
+    const initialValue = boolIdents.has(name) ? false : 0;
+    extraVars.push({ name, kind: 'state', initialValue });
     declared.add(name);
   }
 
