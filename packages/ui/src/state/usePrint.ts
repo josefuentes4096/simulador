@@ -1,5 +1,6 @@
 import { getNodesBounds } from '@xyflow/react';
 import { useCallback } from 'react';
+import type { ModelVariable } from '@simulador/shared';
 import {
   captureDiagramPng,
   getDiagramTarget,
@@ -7,6 +8,38 @@ import {
 import { i18n } from '../locales';
 import { cssPageSize, printableArea, PRINT_FOOTER_PX } from '../printPages';
 import type { ModelState } from './useModelState';
+
+type VarSection = 'data' | 'control' | 'state' | 'result' | 'tef';
+
+const VAR_SECTION_ORDER: VarSection[] = ['data', 'control', 'state', 'result', 'tef'];
+
+const VAR_SECTION_LABEL_KEY: Record<VarSection, string> = {
+  data: 'variables.sectionData',
+  control: 'variables.sectionControl',
+  state: 'variables.sectionState',
+  result: 'variables.sectionResult',
+  tef: 'variables.tefSectionHeader',
+};
+
+// Mirrors `sectionOf` in VariablesPanel — keeps the printout grouped the
+// same way the on-screen panel is.
+function sectionOfVar(v: ModelVariable): VarSection {
+  switch (v.kind) {
+    case 'data':
+      return 'data';
+    case 'control':
+      return 'control';
+    case 'state':
+      return 'state';
+    case 'result':
+      return 'result';
+    case 'array':
+      return v.section ?? 'state';
+    case 'event-table':
+    case 'event-table-array':
+      return 'tef';
+  }
+}
 
 const tt = (key: string, params?: Record<string, unknown>): string =>
   i18n.t(key, params) as unknown as string;
@@ -31,18 +64,31 @@ function buildSummaryInnerHtml(model: ModelState): string {
       ? tt('simulationType.eventToEvent')
       : tt('simulationType.deltaTConstant');
 
+  const buckets: Record<VarSection, ModelVariable[]> = {
+    data: [],
+    control: [],
+    state: [],
+    result: [],
+    tef: [],
+  };
+  for (const v of model.variables) buckets[sectionOfVar(v)].push(v);
+
+  const renderVarRow = (v: ModelVariable): string =>
+    `<tr>
+      <td>${esc(v.name)}</td>
+      <td>${esc(tt('variables.kindLabel.' + v.kind))}</td>
+      <td>${esc(v.initialValue !== undefined ? String(v.initialValue) : '')}</td>
+      <td>${esc(v.description ?? '')}</td>
+    </tr>`;
+
   const varRows =
     model.variables.length === 0
       ? `<tr><td colspan="4" class="empty">—</td></tr>`
-      : model.variables
+      : VAR_SECTION_ORDER.filter((s) => buckets[s].length > 0)
           .map(
-            (v) =>
-              `<tr>
-            <td>${esc(v.name)}</td>
-            <td>${esc(tt('variables.kindLabel.' + v.kind))}</td>
-            <td>${esc(v.initialValue !== undefined ? String(v.initialValue) : '')}</td>
-            <td>${esc(v.description ?? '')}</td>
-          </tr>`,
+            (s) =>
+              `<tr class="var-section"><td colspan="4">${esc(tt(VAR_SECTION_LABEL_KEY[s]))}</td></tr>` +
+              buckets[s].map(renderVarRow).join(''),
           )
           .join('');
 
@@ -111,8 +157,11 @@ function buildSummaryInnerHtml(model: ModelState): string {
     eventsContent = `<table>${dtHeader}<tbody>${dtRows}</tbody></table>`;
   }
 
+  // The print header is the dedicated `printTitle` field, edited from the
+  // input at the top of the sidebar. Falls back to 'untitled' when empty.
+  const headerTitle = model.printTitle || 'untitled';
   return `
-    <h1>${esc(model.name || 'untitled')}</h1>
+    <h1>${esc(headerTitle)}</h1>
     <section>
       <h2>${esc(tt('simulationType.header'))}</h2>
       <p>${esc(tipoLabel)}</p>
@@ -250,7 +299,7 @@ export function useOnPrint(
         throw new Error(tt('errors.printFrame'));
       }
       const cssSize = cssPageSize(model.paperSize, model.paperOrientation);
-      const title = (model.name || 'Simulador').replace(/[<>"&]/g, '');
+      const title = (model.printTitle || 'Simulador').replace(/[<>"&]/g, '');
       const footerLeft = `Simulador v${model.builtWith || __APP_VERSION__} · @josefuentes4096`;
       // Summary takes 1 logical page + N tiles. If summary content overflows
       // it'll occupy multiple physical pages but the displayed total stays
@@ -354,6 +403,15 @@ export function useOnPrint(
     font-size: 9px;
   }
   .page--summary td.empty { text-align: center; color: #999; font-style: italic; }
+  /* Variables subsection header row (Dato / Control / Estado / Resultado / TEF). */
+  .page--summary tr.var-section td {
+    background: #ececec;
+    font-weight: 600;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #444;
+  }
   /* TEI table is wide (9 cols); shrink the font further so columns fit. */
   .page--summary table.tei-table { font-size: 9px; }
   .page--summary table.tei-table th { font-size: 8px; }

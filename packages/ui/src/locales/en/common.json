@@ -65,6 +65,10 @@
     "language": "Language",
     "languageHint": "Changes apply immediately."
   },
+  "printTitle": {
+    "header": "Title",
+    "placeholder": "Appears on the first page when printing"
+  },
   "props": {
     "header": "Properties",
     "empty": "Select a block in the diagram",
@@ -161,8 +165,10 @@
       "array": "Array",
       "event-table-array": "Event table array"
     },
-    "sortByKind": "Sort by type",
-    "sortByKindTitle": "Reorder variables: Data · Control · State · Result · Event table",
+    "sectionData": "Data",
+    "sectionControl": "Control",
+    "sectionState": "State",
+    "sectionResult": "Result",
     "tefSectionHeader": "Future events table (TEF)",
     "unusedHint": "This variable is not referenced in any block of the diagram",
     "initialDivergesHint": "The initial value disagrees with the IC block",

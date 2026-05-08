@@ -6,7 +6,7 @@ import { toCpp, toGo, toJava } from '../src/export/sourceCode';
 // Plus a TPLL event-table to exercise the table-rewriting branch.
 const model: SimulationModel = {
   schemaVersion: 2,
-  metadata: { name: 'test' },
+  metadata: { printTitle: 'test' },
   behavior: {
     variables: [
       { name: 'T', kind: 'state', initialValue: 0 },

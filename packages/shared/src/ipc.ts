@@ -89,9 +89,15 @@ export interface SimuladorBridge {
   // Recent items). Otherwise the OS Open dialog is shown.
   openModel: (knownPath?: string) => Promise<OpenedFile | null>;
   // When `knownPath` is provided the file is overwritten silently. Otherwise
-  // a Save dialog is shown. Returns the path actually written (or null when
-  // the user cancels).
-  saveModel: (model: SimulationModel, knownPath?: string) => Promise<SaveResult>;
+  // a Save dialog is shown. `dialogHintPath` (used only when `knownPath` is
+  // omitted, e.g. Save As) seeds the dialog's starting folder and filename
+  // — typically the path of the file currently open. Returns the path
+  // actually written (or null when the user cancels).
+  saveModel: (
+    model: SimulationModel,
+    knownPath?: string,
+    dialogHintPath?: string,
+  ) => Promise<SaveResult>;
   exportPng: (data: Uint8Array, defaultName: string) => Promise<void>;
   exportPdf: (data: Uint8Array, defaultName: string) => Promise<void>;
   exportSvg: (content: string, defaultName: string) => Promise<void>;

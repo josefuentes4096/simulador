@@ -532,6 +532,33 @@ body,
   opacity: 0.5;
 }
 
+/* Single-line text input used by the "Título" panel at the top of the
+   sidebar — drives the `<h1>` printed on the first page. */
+.print-title__input {
+  width: 100%;
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.print-title__input:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  .print-title__input {
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+  .print-title__input:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
 .panel__list {
   list-style: none;
   padding: 0;
@@ -804,11 +831,15 @@ body,
   display: contents;
 }
 
-/* Section header introducing the event-table group: a double-line top border
-   that doubles as the divider, plus a small label naming the group. Spans
-   all five columns of the parent grid. */
+/* Subsection header: a double-line top border that doubles as the divider,
+   plus a small label on the left and an optional + button on the right.
+   Spans all five columns of the parent grid. */
 .var-grid__section-header {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   border-top: 4px double rgba(0, 0, 0, 0.3);
   padding: 0.45rem 0.2rem 0.25rem;
   margin-top: 0.2rem;
@@ -819,10 +850,20 @@ body,
   color: rgba(0, 0, 0, 0.55);
 }
 
+/* The first subsection header sits right below the column header, which
+   already provides a separator — drop the redundant double border. */
+.var-grid__section-header--first {
+  border-top: none;
+  margin-top: 0.1rem;
+}
+
 @media (prefers-color-scheme: dark) {
   .var-grid__section-header {
     border-top-color: rgba(255, 255, 255, 0.3);
     color: rgba(255, 255, 255, 0.6);
+  }
+  .var-grid__section-header--first {
+    border-top: none;
   }
 }
 

@@ -1,12 +1,11 @@
 {
   "schemaVersion": 2,
   "metadata": {
-    "name": "Ejercicio 1 — 1 Cola (ejecutable)",
-    "description": "EaE NS, 1 puesto, 1 cola. Versión con sintaxis JS válida para correr con el Step del simulador. El bloque a_arrep_hex es una subrutina (callKind: subroutine, label = nombre del procedimiento Arrepentimiento, assignTo = A). El sub-flujo de Arrepentimiento se ejecuta y deja el resultado en vars.Arrepentimiento, que se copia a A al volver.",
     "label": "Ejercicio 1 - 1 cola, 1 puesto - Guia Oficial 2015",
     "creator": "Jose Fuentes",
     "version": "1.0",
-    "builtWith": "0.2.0.3",
+    "builtWith": "0.2.0.10",
+    "printTitle": "Ejercicio 1 - 1 cola, 1 puesto",
     "eventTableMode": "independent"
   },
   "behavior": {
@@ -14,26 +13,12 @@
       {
         "name": "IA",
         "kind": "data",
-        "initialValue": 0,
-        "description": "Inter-arribo (exponencial, media 4)"
+        "description": "Intervalo entre arribos"
       },
       {
         "name": "TA",
         "kind": "data",
-        "initialValue": 0,
-        "description": "Tiempo de atención (exponencial, media 3)"
-      },
-      {
-        "name": "A",
-        "kind": "state",
-        "initialValue": false,
-        "description": "Resultado del cálculo de arrepentimiento"
-      },
-      {
-        "name": "Arrepentimiento",
-        "kind": "state",
-        "initialValue": false,
-        "description": "Bandera del sub-flujo de arrepentimiento"
+        "description": "Tiempo de atenciòn"
       },
       {
         "name": "NS",
@@ -66,12 +51,6 @@
         "description": "Porcentaje de tiempo ocioso del servidor"
       },
       {
-        "name": "SA5",
-        "kind": "result",
-        "initialValue": 0,
-        "description": "Sumatoria de arrepentimientos con NS-1=5"
-      },
-      {
         "name": "TPLL",
         "kind": "event-table",
         "initialValue": 0,
@@ -82,10 +61,6 @@
         "kind": "event-table",
         "initialValue": "HV",
         "description": "Tabla de próximas salidas"
-      },
-      {
-        "name": "R",
-        "kind": "data"
       }
     ],
     "events": [],
@@ -102,7 +77,7 @@
         "event": "Salida",
         "tef": "TPS",
         "conditionalNext": "Salida",
-        "condition": "NS <= 1",
+        "condition": "NS >= 1",
         "chainer": "TA"
       }
     ]
@@ -807,9 +782,9 @@
       }
     ],
     "viewport": {
-      "x": 257.6587483224046,
-      "y": -197.23979509090486,
-      "zoom": 0.659753955386448
+      "x": -865.5423707286834,
+      "y": -393.76452794249644,
+      "zoom": 1.3195079107728942
     }
   }
 }

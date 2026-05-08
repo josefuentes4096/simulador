@@ -292,7 +292,7 @@ export function compileModel(model: SimulationModel): CompiledModel {
     resultVariables,
     mainFlow,
     procedures,
-    modelName: model.metadata.name,
+    modelName: model.metadata.printTitle ?? '',
     // Seed and timeLimit are baked into the generated source as edit-here
     // constants — the editor no longer exposes a knob for them.
     seed: 1,

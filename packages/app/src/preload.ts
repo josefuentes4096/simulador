@@ -8,7 +8,8 @@ import {
 
 const bridge: SimuladorBridge = {
   openModel: (knownPath) => ipcRenderer.invoke(IPC.ModelOpen, knownPath),
-  saveModel: (model, knownPath) => ipcRenderer.invoke(IPC.ModelSave, model, knownPath),
+  saveModel: (model, knownPath, dialogHintPath) =>
+    ipcRenderer.invoke(IPC.ModelSave, model, knownPath, dialogHintPath),
   exportPng: (data, name) => ipcRenderer.invoke(IPC.ExportPng, data, name),
   exportPdf: (data, name) => ipcRenderer.invoke(IPC.ExportPdf, data, name),
   exportSvg: (content, name) => ipcRenderer.invoke(IPC.ExportSvg, content, name),

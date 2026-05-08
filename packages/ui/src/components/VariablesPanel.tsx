@@ -10,23 +10,80 @@ interface Props {
   setVariables: Dispatch<SetStateAction<ModelVariable[]>>;
 }
 
-const KINDS: VariableKind[] = ['state', 'result', 'control', 'data', 'array', 'event-table', 'event-table-array'];
+type ScalarSection = 'data' | 'control' | 'state' | 'result';
+type ArraySection = 'data' | 'state' | 'result';
 
-// Sort order for "Ordenar por tipo": Datos first (generated each step),
-// Control next (fixed parameters), then Estado (mutable internals), then
-// Resultado (output metrics), and finally Tabla de eventos isolated below
-// a double separator since it's the only non-scalar kind.
-const SORT_KIND_ORDER: VariableKind[] = ['data', 'control', 'state', 'result', 'array', 'event-table', 'event-table-array'];
+// Visible subsection order. TEF comes last and is conditional.
+const SCALAR_SECTIONS: ScalarSection[] = ['data', 'control', 'state', 'result'];
+
+// Dropdown options per section. Control only allows its own kind; the other
+// three also allow `array` (an array variable still belongs to a specific
+// subsection — see `section` on ModelVariable).
+const KIND_OPTIONS_BY_SECTION: Record<ScalarSection, VariableKind[]> = {
+  data: ['data', 'array'],
+  control: ['control'],
+  state: ['state', 'array'],
+  result: ['result', 'array'],
+};
+
+const TEF_KIND_OPTIONS: VariableKind[] = ['event-table', 'event-table-array'];
+
+const DEFAULT_KIND_BY_SECTION: Record<ScalarSection, VariableKind> = {
+  data: 'data',
+  control: 'control',
+  state: 'state',
+  result: 'result',
+};
+
+const SECTION_LABEL_KEY: Record<ScalarSection, string> = {
+  data: 'variables.sectionData',
+  control: 'variables.sectionControl',
+  state: 'variables.sectionState',
+  result: 'variables.sectionResult',
+};
+
+function sectionOf(v: ModelVariable): ScalarSection | 'tef' {
+  switch (v.kind) {
+    case 'data':
+      return 'data';
+    case 'control':
+      return 'control';
+    case 'state':
+      return 'state';
+    case 'result':
+      return 'result';
+    case 'array':
+      // Legacy array variables (no section field) default to Estado.
+      return v.section ?? 'state';
+    case 'event-table':
+    case 'event-table-array':
+      return 'tef';
+  }
+}
+
+// When the user picks a kind that doesn't fit the row's current section
+// (e.g. picking `array` from a Control row, or switching from `state` to
+// `data`), this resolves where the variable should land. Section field is
+// only persisted for kind === 'array'; for the other scalar kinds the
+// section is fully derivable from the kind.
+function resolveSectionAfterKindChange(
+  newKind: VariableKind,
+  prev: ScalarSection | 'tef',
+): ArraySection | undefined {
+  if (newKind !== 'array') return undefined;
+  // Arrays are only valid in data / state / result. Coming from Control or
+  // TEF, fall back to Estado as a sensible default.
+  if (prev === 'data' || prev === 'state' || prev === 'result') return prev;
+  return 'state';
+}
 
 function parseInitialValue(raw: string, kind: VariableKind): ModelVariable['initialValue'] {
   if (raw === '') return undefined;
   if (kind === 'event-table-array') {
-    // Outer-array length only — inner TEFs always start empty.
     const n = Number(raw.trim());
     return Number.isFinite(n) && n >= 0 ? Math.floor(n) : undefined;
   }
   if (kind === 'array') {
-    // Two accepted forms: a JSON array (`[0, 1, 2]`) or a length number (`3`).
     const trimmed = raw.trim();
     if (trimmed.startsWith('[')) {
       try {
@@ -58,12 +115,27 @@ function formatInitialValue(v: ModelVariable['initialValue']): string {
 export function VariablesPanel({ variables, setVariables }: Props) {
   const { t } = useTranslation();
   const analysis = useContext(DiagramAnalysisContext);
-  const onAdd = useCallback(() => {
-    setVariables((vs) => [
-      ...vs,
-      { name: `var${vs.length + 1}`, kind: 'state', initialValue: 0 },
-    ]);
-  }, [setVariables]);
+
+  const onAddToSection = useCallback(
+    (section: ScalarSection) => {
+      setVariables((vs) => {
+        // Insert just after the last variable already in this section so
+        // canonical JSON output keeps subsections grouped.
+        let lastIdx = -1;
+        for (let i = 0; i < vs.length; i++) {
+          if (sectionOf(vs[i]!) === section) lastIdx = i;
+        }
+        const baseName = `var${vs.length + 1}`;
+        const newVar: ModelVariable =
+          section === 'data'
+            ? { name: baseName, kind: 'data' }
+            : { name: baseName, kind: DEFAULT_KIND_BY_SECTION[section], initialValue: 0 };
+        if (lastIdx === -1) return [...vs, newVar];
+        return [...vs.slice(0, lastIdx + 1), newVar, ...vs.slice(lastIdx + 1)];
+      });
+    },
+    [setVariables],
+  );
 
   const onUpdate = useCallback(
     (index: number, patch: Partial<ModelVariable>) => {
@@ -75,7 +147,10 @@ export function VariablesPanel({ variables, setVariables }: Props) {
             const { initialValue: _drop, ...rest } = next;
             next = rest;
           }
-          if ('description' in patch && (patch.description === undefined || patch.description === '')) {
+          if (
+            'description' in patch &&
+            (patch.description === undefined || patch.description === '')
+          ) {
             const { description: _drop, ...rest } = next;
             next = rest;
           }
@@ -85,6 +160,18 @@ export function VariablesPanel({ variables, setVariables }: Props) {
           if (next.kind === 'data' && next.initialValue !== undefined) {
             const { initialValue: _drop, ...rest } = next;
             next = rest;
+          }
+          // Maintain the `section` field. It is only meaningful for kind
+          // 'array'; for the other kinds we strip it so the JSON stays
+          // tidy.
+          if ('kind' in patch) {
+            const resolved = resolveSectionAfterKindChange(next.kind, sectionOf(v));
+            if (next.kind === 'array') {
+              next.section = resolved;
+            } else if (next.section !== undefined) {
+              const { section: _drop, ...rest } = next;
+              next = rest;
+            }
           }
           return next;
         }),
@@ -100,132 +187,131 @@ export function VariablesPanel({ variables, setVariables }: Props) {
     [setVariables],
   );
 
-  const onSortByKind = useCallback(() => {
-    setVariables((vs) =>
-      [...vs].sort((a, b) => {
-        const ka = SORT_KIND_ORDER.indexOf(a.kind);
-        const kb = SORT_KIND_ORDER.indexOf(b.kind);
-        if (ka !== kb) return ka - kb;
-        return a.name.localeCompare(b.name);
-      }),
-    );
-  }, [setVariables]);
+  // Pre-bucket variables by section while preserving each variable's
+  // original index in the array (callbacks below use that index to patch
+  // the right entry).
+  type IndexedVar = { v: ModelVariable; index: number };
+  const buckets: Record<ScalarSection | 'tef', IndexedVar[]> = {
+    data: [],
+    control: [],
+    state: [],
+    result: [],
+    tef: [],
+  };
+  variables.forEach((v, index) => {
+    buckets[sectionOf(v)].push({ v, index });
+  });
+
+  const renderRow = ({ v, index: i }: IndexedVar, kindOptions: VariableKind[]) => (
+    <div className="var-row" key={i}>
+      <input
+        className={`var-row__name ${
+          fieldRules.variableUnused(v, analysis) ? 'var-row__name--unused' : ''
+        }`}
+        value={v.name}
+        onChange={(e) => onUpdate(i, { name: e.target.value })}
+        placeholder={t('variables.namePlaceholder')}
+        spellCheck={false}
+        title={fieldRules.variableUnused(v, analysis) ? t('variables.unusedHint') : undefined}
+      />
+      <select
+        className={`var-row__kind badge--${v.kind}`}
+        value={v.kind}
+        onChange={(e) => onUpdate(i, { kind: e.target.value as VariableKind })}
+      >
+        {kindOptions.map((k) => (
+          <option key={k} value={k}>
+            {t(`variables.kindLabel.${k}`)}
+          </option>
+        ))}
+      </select>
+      <input
+        className={`var-row__init ${
+          fieldRules.variableInitialDiverges(v, analysis.ciValues)
+            ? 'var-row__init--diverges'
+            : ''
+        }`}
+        value={v.kind === 'data' ? '' : formatInitialValue(v.initialValue)}
+        onChange={(e) =>
+          onUpdate(i, { initialValue: parseInitialValue(e.target.value, v.kind) })
+        }
+        placeholder={
+          v.kind === 'data'
+            ? '—'
+            : v.kind === 'array'
+              ? t('variables.arrayInitPlaceholder')
+              : t('variables.initPlaceholder')
+        }
+        spellCheck={false}
+        disabled={v.kind === 'data'}
+        title={
+          fieldRules.variableInitialDiverges(v, analysis.ciValues)
+            ? t('variables.initialDivergesHint')
+            : v.kind === 'data'
+              ? t('variables.dataNoInitHint')
+              : v.kind === 'array'
+                ? t('variables.arrayInitHint')
+                : undefined
+        }
+      />
+      <input
+        className="var-row__desc"
+        value={v.description ?? ''}
+        onChange={(e) => onUpdate(i, { description: e.target.value })}
+        placeholder={t('variables.descriptionPlaceholder')}
+      />
+      <button
+        className="var-row__delete"
+        onClick={() => onDelete(i)}
+        aria-label={t('variables.deleteAria')}
+        title={t('variables.deleteTitle')}
+      >
+        ×
+      </button>
+    </div>
+  );
 
   return (
     <section className="panel">
       <header className="panel__header">
         <h3>{t('variables.header')}</h3>
-        <div className="panel__actions">
-          <button
-            className="panel__action"
-            onClick={onSortByKind}
-            disabled={variables.length < 2}
-            title={t('variables.sortByKindTitle')}
-          >
-            {t('variables.sortByKind')}
-          </button>
-          <button className="panel__add" onClick={onAdd} aria-label={t('variables.addAria')}>
-            +
-          </button>
-        </div>
       </header>
-      {variables.length === 0 && <p className="panel__empty">{t('variables.empty')}</p>}
-      {variables.length > 0 && (
-        // Single grid container so column widths are shared between the
-        // header row and every data row. Each row uses `display: contents`
-        // so its children become direct children of `.var-grid` and align
-        // to the same column tracks.
-        <div className="var-grid">
-          <div className="var-row var-row--header">
-            <span>{t('variables.colName')}</span>
-            <span>{t('variables.colKind')}</span>
-            <span>{t('variables.colInit')}</span>
-            <span>{t('variables.colDescription')}</span>
-            <span aria-hidden="true" />
-          </div>
-          {variables.map((v, i) => {
-            const prev = i > 0 ? variables[i - 1] : null;
-            // Double-line section header introduces the event-table group
-            // (rendered when the previous row is non-event-table and this row
-            // is event-table — i.e. crossing the boundary).
-            const showSectionHeader =
-              v.kind === 'event-table' && prev !== null && prev.kind !== 'event-table';
-            return (
-              <Fragment key={i}>
-                {showSectionHeader && (
-                  <div className="var-grid__section-header">
-                    {t('variables.tefSectionHeader')}
-                  </div>
-                )}
-                <div className="var-row">
-                  <input
-                    className={`var-row__name ${fieldRules.variableUnused(v, analysis) ? 'var-row__name--unused' : ''}`}
-                    value={v.name}
-                    onChange={(e) => onUpdate(i, { name: e.target.value })}
-                    placeholder={t('variables.namePlaceholder')}
-                    spellCheck={false}
-                    title={fieldRules.variableUnused(v, analysis) ? t('variables.unusedHint') : undefined}
-                  />
-                  <select
-                    className={`var-row__kind badge--${v.kind}`}
-                    value={v.kind}
-                    onChange={(e) => onUpdate(i, { kind: e.target.value as VariableKind })}
-                  >
-                    {KINDS.map((k) => (
-                      <option key={k} value={k}>
-                        {t(`variables.kindLabel.${k}`)}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    className={`var-row__init ${
-                      fieldRules.variableInitialDiverges(v, analysis.ciValues)
-                        ? 'var-row__init--diverges'
-                        : ''
-                    }`}
-                    value={v.kind === 'data' ? '' : formatInitialValue(v.initialValue)}
-                    onChange={(e) =>
-                      onUpdate(i, { initialValue: parseInitialValue(e.target.value, v.kind) })
-                    }
-                    placeholder={
-                      v.kind === 'data'
-                        ? '—'
-                        : v.kind === 'array'
-                          ? t('variables.arrayInitPlaceholder')
-                          : t('variables.initPlaceholder')
-                    }
-                    spellCheck={false}
-                    disabled={v.kind === 'data'}
-                    title={
-                      fieldRules.variableInitialDiverges(v, analysis.ciValues)
-                        ? t('variables.initialDivergesHint')
-                        : v.kind === 'data'
-                          ? t('variables.dataNoInitHint')
-                          : v.kind === 'array'
-                            ? t('variables.arrayInitHint')
-                            : undefined
-                    }
-                  />
-                  <input
-                    className="var-row__desc"
-                    value={v.description ?? ''}
-                    onChange={(e) => onUpdate(i, { description: e.target.value })}
-                    placeholder={t('variables.descriptionPlaceholder')}
-                  />
-                  <button
-                    className="var-row__delete"
-                    onClick={() => onDelete(i)}
-                    aria-label={t('variables.deleteAria')}
-                    title={t('variables.deleteTitle')}
-                  >
-                    ×
-                  </button>
-                </div>
-              </Fragment>
-            );
-          })}
+      <div className="var-grid">
+        <div className="var-row var-row--header">
+          <span>{t('variables.colName')}</span>
+          <span>{t('variables.colKind')}</span>
+          <span>{t('variables.colInit')}</span>
+          <span>{t('variables.colDescription')}</span>
+          <span aria-hidden="true" />
         </div>
-      )}
+        {SCALAR_SECTIONS.map((section, idx) => (
+          <Fragment key={section}>
+            <div
+              className={`var-grid__section-header${
+                idx === 0 ? ' var-grid__section-header--first' : ''
+              }`}
+            >
+              <span>{t(SECTION_LABEL_KEY[section])}</span>
+              <button
+                className="panel__add"
+                onClick={() => onAddToSection(section)}
+                aria-label={t('variables.addAria')}
+              >
+                +
+              </button>
+            </div>
+            {buckets[section].map((iv) => renderRow(iv, KIND_OPTIONS_BY_SECTION[section]))}
+          </Fragment>
+        ))}
+        {buckets.tef.length > 0 && (
+          <>
+            <div className="var-grid__section-header">
+              <span>{t('variables.tefSectionHeader')}</span>
+            </div>
+            {buckets.tef.map((iv) => renderRow(iv, TEF_KIND_OPTIONS))}
+          </>
+        )}
+      </div>
     </section>
   );
 }

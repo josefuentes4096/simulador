@@ -16,6 +16,10 @@ export interface ModelVariable {
   // (length — array of N zeros) or an explicit number array (the seed).
   initialValue?: ScalarValue | number[];
   description?: string;
+  // Only meaningful when `kind === 'array'`. Disambiguates which UI
+  // subsection the array belongs to (Dato / Estado / Resultado). For the
+  // other kinds the section is derived directly from the kind itself.
+  section?: 'data' | 'state' | 'result';
 }
 
 export interface ModelEvent {
@@ -102,8 +106,6 @@ export type SimulationType = 'event-to-event' | 'delta-t-constant' | 'dynamic';
 export type EventTableMode = 'unified' | 'independent';
 
 export interface ModelMetadata {
-  name: string;
-  description?: string;
   createdAt?: string;
   updatedAt?: string;
   // Title-block fields, surfaced and edited from the on-canvas Cuadro de
@@ -115,6 +117,10 @@ export interface ModelMetadata {
   creator?: string;
   version?: string;
   builtWith?: string;
+  // The header that prints on the first page (and seeds the suggested
+  // filename for "Save as PDF" / exports). Edited from the input at the
+  // top of the sidebar — distinct from the on-canvas title-block `label`.
+  printTitle?: string;
   // Paper layout used for the print pipeline and the on-canvas page guides.
   // Persisted so opening a file restores the same red-line grid the author
   // intended.
@@ -282,14 +288,14 @@ function sortById<T extends { id: string }>(arr: readonly T[]): T[] {
 }
 
 function canonicalMetadata(m: ModelMetadata): ModelMetadata {
-  const out: ModelMetadata = { name: m.name };
-  if (m.description !== undefined) out.description = m.description;
+  const out: ModelMetadata = {};
   if (m.createdAt !== undefined) out.createdAt = m.createdAt;
   if (m.updatedAt !== undefined) out.updatedAt = m.updatedAt;
   if (m.label !== undefined) out.label = m.label;
   if (m.creator !== undefined) out.creator = m.creator;
   if (m.version !== undefined) out.version = m.version;
   if (m.builtWith !== undefined) out.builtWith = m.builtWith;
+  if (m.printTitle !== undefined && m.printTitle !== '') out.printTitle = m.printTitle;
   if (m.paperSize !== undefined) out.paperSize = m.paperSize;
   if (m.paperOrientation !== undefined) out.paperOrientation = m.paperOrientation;
   if (m.simulationType !== undefined) out.simulationType = m.simulationType;
@@ -303,6 +309,7 @@ function canonicalVariable(v: ModelVariable): ModelVariable {
     out.initialValue = Array.isArray(v.initialValue) ? [...v.initialValue] : v.initialValue;
   }
   if (v.description !== undefined) out.description = v.description;
+  if (v.kind === 'array' && v.section !== undefined) out.section = v.section;
   return out;
 }
 

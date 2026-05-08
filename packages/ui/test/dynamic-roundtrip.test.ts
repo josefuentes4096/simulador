@@ -91,7 +91,7 @@ describe('dynamic round-trip', () => {
   it('canonicalize drops dynamic when empty', () => {
     const empty: SimulationModel = {
       schemaVersion: 2,
-      metadata: { name: 'empty' },
+      metadata: {},
       behavior: { variables: [], events: [] },
       diagram: { nodes: [], edges: [] },
       dynamic: {

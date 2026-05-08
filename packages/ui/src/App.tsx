@@ -152,9 +152,9 @@ export function App() {
   useEffect(() => {
     const filename = currentFilePath
       ? currentFilePath.split(/[\\/]/).pop()
-      : `${model.name || 'untitled'}.json`;
+      : 'untitled';
     document.title = `Simulador - ${filename}`;
-  }, [currentFilePath, model.name]);
+  }, [currentFilePath]);
 
   // Sync the Variables panel with routine-block labels:
   //   - For each function-routine (callKind='function') label, ensure a
@@ -244,8 +244,6 @@ export function App() {
       model.initialEvents,
       model.nodes,
       model.edges,
-      model.name,
-      model.description,
     ],
   );
   const blocking = hasErrors(validation);
@@ -410,7 +408,14 @@ export function App() {
       const built = nextBuiltWith(model.builtWith);
       const serialized = model.serialize();
       serialized.metadata.builtWith = built;
-      const result = await window.simulador.saveModel(serialized);
+      // Pass the current file path as a dialog hint so the Save As dialog
+      // opens in the same folder the file was loaded from (and pre-fills
+      // its filename when no print title is set).
+      const result = await window.simulador.saveModel(
+        serialized,
+        undefined,
+        currentFilePath ?? undefined,
+      );
       if (result.path) {
         setCurrentFilePath(result.path);
         model.setBuiltWith(built);
@@ -420,7 +425,7 @@ export function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [model, nextBuiltWith]);
+  }, [currentFilePath, model, nextBuiltWith]);
 
   // Wipe to a brand-new empty model. Used by both File → New and File → Close
   // (Close is just "go back to a blank workspace" in this single-document app).
@@ -449,7 +454,7 @@ export function App() {
         return;
       const blank: SimulationModel = {
         schemaVersion: 2,
-        metadata: { name: 'untitled' },
+        metadata: {},
         behavior: {
           variables: [],
           events: [],

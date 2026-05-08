@@ -65,6 +65,10 @@
     "language": "Idioma",
     "languageHint": "Los cambios se aplican al instante."
   },
+  "printTitle": {
+    "header": "Título",
+    "placeholder": "Aparece en la primera hoja al imprimir"
+  },
   "props": {
     "header": "Propiedades",
     "empty": "Selecciona un bloque en el diagrama",
@@ -161,8 +165,10 @@
       "array": "Arreglo",
       "event-table-array": "Vector de tablas de eventos"
     },
-    "sortByKind": "Ordenar por tipo",
-    "sortByKindTitle": "Reordena las variables: Datos · Control · Estado · Resultado · Tabla de eventos",
+    "sectionData": "Dato",
+    "sectionControl": "Control",
+    "sectionState": "Estado",
+    "sectionResult": "Resultado",
     "tefSectionHeader": "Tabla de eventos futuros (TEF)",
     "unusedHint": "Esta variable no se usa en ningún bloque del diagrama",
     "initialDivergesHint": "El valor inicial difiere del declarado en el bloque CI",

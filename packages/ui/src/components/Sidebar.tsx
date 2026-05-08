@@ -6,6 +6,7 @@ import type { ValidationIssue } from '../validation/validate';
 import { DebugPanel } from './DebugPanel';
 import { EventsPanel } from './EventsPanel';
 import { NodePropertiesPanel } from './NodePropertiesPanel';
+import { PrintTitlePanel } from './PrintTitlePanel';
 import { RunSpecsPanel } from './RunSpecsPanel';
 import { SimulationTypePanel } from './SimulationTypePanel';
 import { ValidationPanel } from './ValidationPanel';
@@ -72,6 +73,10 @@ export function Sidebar({
   const { t } = useTranslation();
   return (
     <aside className="sidebar">
+      <PrintTitlePanel
+        printTitle={model.printTitle}
+        setPrintTitle={model.setPrintTitle}
+      />
       <ValidationPanel issues={validation} />
       <NodePropertiesPanel
         nodes={model.simulationType === 'dynamic' ? model.dynamicNodes : model.nodes}

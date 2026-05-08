@@ -41,10 +41,6 @@ export type FlowNode = Node;
 export type FlowEdge = Edge;
 
 export interface ModelState {
-  // The model's `metadata.name` and `metadata.description`. Read-only at
-  // the API surface — set indirectly via load() / by saving with a new path.
-  name: string;
-  description: string;
   // Title-block fields. Surfaced as top-level state so the on-canvas Cuadro
   // de rótulo can edit them directly and the values round-trip through the
   // JSON metadata block. `fecha` is OS-derived (file mtime) and stored as
@@ -59,6 +55,11 @@ export interface ModelState {
   setVersion: (version: string) => void;
   builtWith: string;
   setBuiltWith: (builtWith: string) => void;
+  // Print header — what gets stamped on the first page when printing
+  // (and used as the suggested basename for exports / Save-as-PDF).
+  // Edited from the input at the top of the sidebar.
+  printTitle: string;
+  setPrintTitle: (printTitle: string) => void;
   paperSize: 'a4' | 'letter' | 'legal' | 'a3' | 'a5';
   setPaperSize: (s: 'a4' | 'letter' | 'legal' | 'a3' | 'a5') => void;
   paperOrientation: 'portrait' | 'landscape';
@@ -107,12 +108,11 @@ export interface ModelState {
 }
 
 export function useModelState(): ModelState {
-  const [name, setName] = useState('untitled');
-  const [description, setDescription] = useState('');
   const [label, setLabel] = useState('');
   const [creator, setCreator] = useState('');
   const [version, setVersion] = useState('');
   const [builtWith, setBuiltWith] = useState('');
+  const [printTitle, setPrintTitle] = useState('');
   const [paperSize, setPaperSize] = useState<'a4' | 'letter' | 'legal' | 'a3' | 'a5'>('a4');
   const [paperOrientation, setPaperOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [simulationType, setSimulationType] = useState<SimulationType>('event-to-event');
@@ -137,12 +137,11 @@ export function useModelState(): ModelState {
 
   const load = useCallback(
     (model: SimulationModel): void => {
-      setName(model.metadata.name);
-      setDescription(model.metadata.description ?? '');
       setLabel(model.metadata.label ?? '');
       setCreator(model.metadata.creator ?? '');
       setVersion(model.metadata.version ?? '');
       setBuiltWith(model.metadata.builtWith ?? '');
+      setPrintTitle(model.metadata.printTitle ?? '');
       setPaperSize(model.metadata.paperSize ?? 'a4');
       setPaperOrientation(model.metadata.paperOrientation ?? 'portrait');
       setSimulationType(model.metadata.simulationType ?? 'event-to-event');
@@ -305,12 +304,11 @@ export function useModelState(): ModelState {
     const raw: SimulationModel = {
       schemaVersion: 2,
       metadata: {
-        name,
-        ...(description ? { description } : {}),
         ...(label ? { label } : {}),
         ...(creator ? { creator } : {}),
         ...(version ? { version } : {}),
         ...(builtWith ? { builtWith } : {}),
+        ...(printTitle ? { printTitle } : {}),
         ...(paperSize !== 'a4' ? { paperSize } : {}),
         ...(paperOrientation !== 'portrait' ? { paperOrientation } : {}),
         ...(simulationType !== 'event-to-event' ? { simulationType } : {}),
@@ -435,17 +433,16 @@ export function useModelState(): ModelState {
     breakpoints,
     builtWith,
     creator,
-    description,
     edges,
     events,
     initialEvents,
     label,
-    name,
     nodes,
     deltaT,
     eventTableMode,
     paperOrientation,
     paperSize,
+    printTitle,
     simulationType,
     tei,
     variables,
@@ -458,8 +455,6 @@ export function useModelState(): ModelState {
   ]);
 
   return {
-    name,
-    description,
     label,
     setLabel,
     creator,
@@ -468,6 +463,8 @@ export function useModelState(): ModelState {
     setVersion,
     builtWith,
     setBuiltWith,
+    printTitle,
+    setPrintTitle,
     paperSize,
     setPaperSize,
     paperOrientation,

@@ -47,7 +47,7 @@ export function useOnExport(
   return useCallback(
     async (kind: ExportKind) => {
       setError(null);
-      const baseName = model.name || 'model';
+      const baseName = model.printTitle || 'model';
       try {
         if (kind === 'png' || kind === 'pdf' || kind === 'svg') {
           const target = getDiagramTarget();

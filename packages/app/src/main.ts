@@ -158,13 +158,29 @@ function registerIpc(): void {
 
   ipcMain.handle(
     IPC.ModelSave,
-    async (_evt, model: SimulationModel, knownPath?: string): Promise<SaveResult> => {
+    async (
+      _evt,
+      model: SimulationModel,
+      knownPath?: string,
+      dialogHintPath?: string,
+    ): Promise<SaveResult> => {
       if (!mainWindow) return { path: null };
       let target: string | null = knownPath ?? null;
       if (!target) {
+        // Suggested filename: prefer the user-set print title, then the
+        // basename of the currently-open file, finally 'untitled'.
+        const hintBase = dialogHintPath
+          ? path.basename(dialogHintPath, path.extname(dialogHintPath))
+          : '';
+        const suggestedBase = model.metadata.printTitle || hintBase || 'untitled';
+        // Starting folder: directory of the open file if any, otherwise let
+        // Electron pick the OS default.
+        const defaultPath = dialogHintPath
+          ? path.join(path.dirname(dialogHintPath), `${suggestedBase}.json`)
+          : `${suggestedBase}.json`;
         const result = await dialog.showSaveDialog(mainWindow, {
           filters: [{ name: 'Simulation Model', extensions: ['json'] }],
-          defaultPath: `${model.metadata.name}.json`,
+          defaultPath,
         });
         if (result.canceled || !result.filePath) return { path: null };
         target = result.filePath;
