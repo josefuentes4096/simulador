@@ -23,12 +23,12 @@
   },
   "dependencies": {
     "@simulador/shared": "*",
-    "electron-updater": "^6.3.9"
+    "electron-updater": "^6.8.9"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",
     "electron": "39.8.5",
-    "electron-builder": "^26.0.0",
+    "electron-builder": "^26.15.3",
     "wait-on": "^8.0.1"
   }
 }
