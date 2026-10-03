@@ -95,7 +95,7 @@ Bloque con campos editables (Título / Autor / Versión) que se sincronizan con 
 
 ### Opción B — Compilar desde el código fuente
 
-Para desarrolladores, o si la versión publicada no incluye un instalador para tu sistema operativo. Requiere instalar **Node.js 20 o superior**.
+Para desarrolladores, o si la versión publicada no incluye un instalador para tu sistema operativo. Requiere instalar **Node.js 20.19 o superior** (recomendado: 22 LTS).
 
 1. **Instalar Node.js**: descargar el instalador LTS desde [nodejs.org](https://nodejs.org/) y ejecutarlo con todas las opciones por defecto.
 2. **Descargar el código**: en la página principal del repositorio, click en el botón verde `<> Code` → `Download ZIP`. Descomprimir el `.zip` en una carpeta a elección (por ejemplo `C:\Simulador` en Windows o `~/Simulador` en macOS/Linux).
