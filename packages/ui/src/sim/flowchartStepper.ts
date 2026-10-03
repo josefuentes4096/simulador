@@ -651,7 +651,9 @@ export function stepRuntime(input: StepInput, state: RuntimeState): RuntimeState
   }
 
   let nextEdge: Edge | undefined;
-  if (node.type === 'decision') {
+  if (node.type === 'decision' || node.type === 'loop') {
+    // Both node types pick their successor by handle. For the Iterador this
+    // is always the 'no' (exit) edge: the continue branch returned earlier.
     nextEdge = findOutgoing(input.edges, node.id, nextHandle);
   } else {
     nextEdge = findOutgoing(input.edges, node.id);
