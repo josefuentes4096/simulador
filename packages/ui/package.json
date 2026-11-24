@@ -15,7 +15,7 @@
     "@uiw/react-codemirror": "^4.23.6",
     "@xyflow/react": "^12.3.5",
     "html-to-image": "^1.11.11",
-    "i18next": "^23.16.4",
+    "i18next": "^26.3.4",
     "i18next-icu": "^2.3.0",
     "intl-messageformat": "^10.7.7",
     "jspdf": "^4.2.1",
